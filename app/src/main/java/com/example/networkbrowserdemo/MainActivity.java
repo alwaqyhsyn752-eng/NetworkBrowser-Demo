@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
     private boolean logUpdatePending = false;
     private boolean stoppedState = false;
     private boolean isRunning = false;
-    private boolean presentationMode = false;
+    private boolean presentationMode = true;
     private final Random rand = new Random();
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -51,6 +51,7 @@ public class MainActivity extends Activity {
         
         // تعريف زر وضع العرض (حل مشكلة البناء)
         btnPresentation = findViewById(R.id.btnPresentation);
+        btnPresentation.setText("🎬 وضع العرض: مُفعّل ✅");
 
         targetUrl = prefs.getString("url", "http://7.7.7.7/index.html");
         urlBar.setText(targetUrl);
