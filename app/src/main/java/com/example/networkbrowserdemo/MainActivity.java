@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
     
     private EditText urlBar, etPrefix, etSuffix, etDigits, etAttempts, etPause, etRetry, etStatusEvery, etThreads;
     private TextView statusText, logText, voucherResult;
-    private Button btnPresentation;
+    
     private SharedPreferences prefs;
     private String finderJs = "";
     private String realNetworkUrl = "http://7.7.7.7/index.html";
@@ -51,7 +51,6 @@ public class MainActivity extends Activity {
         logText = findViewById(R.id.logText);
         voucherResult = findViewById(R.id.voucherResult);
         webView = findViewById(R.id.webView);
-        btnPresentation = findViewById(R.id.btnPresentation);
 
         // الرابط الحقيقي للشبكة (هنا نضعه)
         realNetworkUrl = prefs.getString("url", "http://7.7.7.7/index.html");
@@ -107,9 +106,6 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnForward).setOnClickListener(v -> { if (webView.canGoForward()) webView.goForward(); });
         findViewById(R.id.btnRefresh).setOnClickListener(v -> webView.reload());
 
-        if (btnPresentation != null) {
-            btnPresentation.setVisibility(View.GONE); // لم نعد نحتاجه
-        }
 
         findViewById(R.id.btnStart).setOnClickListener(v -> startCrack());
         findViewById(R.id.btnStop).setOnClickListener(v -> stopCrack());
