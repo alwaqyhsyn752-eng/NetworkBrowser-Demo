@@ -84,9 +84,13 @@ public class MainActivity extends Activity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
-                // لا نغيّر شريط الرابط للصفحات المحلية
                 if (!url.startsWith("file://")) {
                     urlBar.setText(url);
+                }
+                
+                // ملء صفحة الحالة بالقيم الحقيقية
+                if (url.contains("status.html")) {
+                    fillStatusPage();
                 }
             }
         });
@@ -241,8 +245,17 @@ public class MainActivity extends Activity {
     }
     
     private void showStatusPage(String voucher) {
-        String url = "file:///android_asset/network_source/status.html?voucher=" + voucher + "&ip=192.168.1.100&uptime=1h 30m&remain=5.2GB";
-        webView.loadUrl(url);
+        try {
+            lastVoucher = voucher;
+            lastIp = "172.16.114.93";
+            lastUptime = "1h 30m";
+            lastRemain = "5.2 GB";
+            String url = "file:///android_asset/network_source/status.html?voucher=" + voucher 
+                + "&ip=" + lastIp + "&uptime=" + lastUptime + "&remain=" + lastRemain;
+            webView.loadUrl(url);
+        } catch (Exception e) {
+            appendLog("⚠ خطأ في صفحة الحالة: " + e.getMessage());
+        }
     }
     
     private void stopCrack() {
@@ -295,10 +308,7 @@ public class MainActivity extends Activity {
                 voucherResult.setVisibility(View.VISIBLE);
                 Toast.makeText(MainActivity.this, "✅ " + voucher, Toast.LENGTH_LONG).show();
                 
-                uiHandler.postDelayed(() -> {
-                    String statusUrl = "file:///android_asset/network_source/status.html?voucher=" + voucher + "&ip=192.168.1.100&uptime=1h 30m&remain=5.2GB";
-                    webView.loadUrl(statusUrl);
-                }, 2000);
+                uiHandler.postDelayed(() -> showStatusPage(voucher), 2000);
                 
                 stopCrack();
             });
