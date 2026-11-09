@@ -1,0 +1,39 @@
+plugins {
+    id 'com.android.application'
+}
+android {
+
+    signingConfigs {
+        release {
+            storeFile file("../release.keystore")
+            storePassword "android"
+            keyAlias "mykey"
+            keyPassword "android"
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    namespace 'com.example.networkbrowserdemo'
+    compileSdk 34
+    defaultConfig {
+        applicationId "com.example.networkbrowserdemo"
+        minSdk 24
+        targetSdk 34
+        versionCode 5
+        versionName "5.0"
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    implementation 'androidx.core:core:1.12.0'
+}
