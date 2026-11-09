@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+    <title>حالة الاتصال - HUSSEIN-STAR</title>
+    <link rel="stylesheet" href="css/icons.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body translate="no">
+
+    <div class="cyber-bg" aria-hidden="true">
+        <div class="cyber-orb cyber-orb--1"></div>
+        <div class="cyber-orb cyber-orb--2"></div>
+        <div class="cyber-grid"></div>
+        <div class="cyber-particles">
+            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="screen">
+            <div class="screen-content">
+                
+                <div class="brand-header" style="margin-top: 20px;">
+                    <h1 class="nettitle">HUSSEIN-STAR</h1>
+                    <p class="subtitle">تم تسجيل الدخول بنجاح</p>
+                </div>
+
+                <div class="login-box">
+                    <div class="login-title">
+                        <span class="icon-ok-circled"></span>
+                        <span>لوحة معلومات الكرت</span>
+                    </div>
+
+                    <!-- بيانات الكرت بشكل أيقونات -->
+                    <div class="data">
+                        <span><span class="icon-user" style="color:#00e5ff; margin-left: 5px;"></span> رقم الكرت :</span>
+                        <span style="color: #00e5ff; font-weight: bold; font-family: monospace; font-size: 16px;">$(username)</span>
+                    </div>
+                    
+                    <div class="data">
+                        <span><span class="icon-download-cloud" style="color:#00e5ff; margin-left: 5px;"></span> التحميل المتبقي :</span>
+                        <span style="color: #22c55e; font-weight: bold;">$(bytes-out-nice)</span>
+                    </div>
+
+                    <div class="data">
+                        <span><span class="icon-hourglass" style="color:#00e5ff; margin-left: 5px;"></span> الوقت المتبقي :</span>
+                        <span style="color: #ffd700; font-weight: bold;">$(session-time-left)</span>
+                    </div>
+
+                    <div class="data">
+                        <span><span class="icon-signal" style="color:#00e5ff; margin-left: 5px;"></span> متصل منذ :</span>
+                        <span>$(uptime)</span>
+                    </div>
+
+                    <div class="data">
+                        <span><span class="icon-video" style="color:#00e5ff; margin-left: 5px;"></span> الاستهلاك :</span>
+                        <span>$(bytes-in-nice)</span>
+                    </div>
+
+                    <!-- شريط سرعة وهمي لملء الفراغ -->
+                    <div class="speed-test-box">
+                        <div class="speed-label">جودة الاتصال الحالية</div>
+                        <div class="speed-bar"><div class="speed-fill"></div></div>
+                        <div class="speed-text">ممتازة جداً (5G)</div>
+                    </div>
+
+                    <div class="status-actions" style="margin-top: 20px;">
+                        <a href="$(link-logout)" class="app-submit logout-submit" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span class="icon-off"></span> تسجيل الخروج
+                        </a>
+                        <button type="button" class="app-submit service-submit" style="display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="window.location.href='https://wa.me/967738660998';">
+                            <span class="icon-headphones"></span> الدعم الفني
+                        </button>
+                    </div>
+                </div>
+
+                <!-- حقوق المطور والنشر -->
+                <footer class="site-footer">
+                    <p>برمجة وتطوير: <a href="tel:+967738660998">حسين غلاب - 738660998</a></p>
+                    <p>© 2026 جميع الحقوق محفوظة لشبكة HUSSEIN-STAR</p>
+                </footer>
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>
