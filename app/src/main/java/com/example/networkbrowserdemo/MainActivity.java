@@ -26,6 +26,11 @@ public class MainActivity extends Activity {
     private boolean logUpdatePending = false;
     private boolean isRunning = false;
     private boolean hiddenInitialized = false;
+    
+    private String lastVoucher = "---";
+    private String lastIp = "---";
+    private String lastUptime = "---";
+    private String lastRemain = "---";
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +52,6 @@ public class MainActivity extends Activity {
         voucherResult = findViewById(R.id.voucherResult);
         webView = findViewById(R.id.webView);
 
-        // قراءة الرابط المحفوظ مع التحقق
         String saved = prefs.getString("url", "");
         if (saved.isEmpty() || saved.equals("http://") || saved.startsWith("file://") || !saved.startsWith("http") || saved.length() < 10) {
             realNetworkUrl = "http://7.7.7.7/index.html";
@@ -87,8 +91,6 @@ public class MainActivity extends Activity {
                 if (!url.startsWith("file://")) {
                     urlBar.setText(url);
                 }
-                
-                // ملء صفحة الحالة بالقيم الحقيقية
                 if (url.contains("status.html")) {
                     fillStatusPage();
                 }
@@ -98,7 +100,7 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnGo).setOnClickListener(v -> {
             String entered = urlBar.getText().toString().trim();
             if (entered.isEmpty() || entered.startsWith("file://")) {
-                Toast.makeText(this, "أدخل رابط الشبكة الحقيقية (مثل: http://7.7.7.7/index.html)", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "أدخل رابط الشبكة الحقيقية", Toast.LENGTH_LONG).show();
                 return;
             }
             if (!entered.startsWith("http")) entered = "http://" + entered;
@@ -145,14 +147,8 @@ public class MainActivity extends Activity {
     }
 
     private void startCrack() {
-        // التحقق من صحة الرابط
-        if (realNetworkUrl == null || realNetworkUrl.isEmpty() 
-            || realNetworkUrl.startsWith("file://") 
-            || realNetworkUrl.equals("http://") 
-            || realNetworkUrl.length() < 10) {
-            Toast.makeText(this, "❌ الرابط غير صحيح! أدخل رابط الشبكة واضغط اذهب", Toast.LENGTH_LONG).show();
-            appendLog("❌ الرابط الحالي غير صحيح: [" + realNetworkUrl + "]");
-            appendLog("💡 أدخل رابطاً مثل: http://7.7.7.7/index.html");
+        if (realNetworkUrl == null || realNetworkUrl.isEmpty() || realNetworkUrl.startsWith("file://") || realNetworkUrl.equals("http://") || realNetworkUrl.length() < 10) {
+            Toast.makeText(this, "❌ الرابط غير صحيح!", Toast.LENGTH_LONG).show();
             return;
         }
         
@@ -171,21 +167,16 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 if (processed) return;
                 processed = true;
-                view.evaluateJavascript(
-                    "(function(){try{return document.body.innerText;}catch(e){return '';}})()",
-                    value -> {
+                view.evaluateJavascript("(function(){try{return document.body.innerText;}catch(e){return '';}})()", value -> {
                         String body = value != null ? value : "";
                         if (body.startsWith("\"") && body.endsWith("\"")) {
-                            body = body.substring(1, body.length() - 1);
-                            body = body.replace("\\\"", "\"").replace("\\\\", "\\").replace("\\n", " ");
+                            body = body.substring(1, body.length() - 1).replace("\\\"", "\"").replace("\\\\", "\\").replace("\\n", " ");
                         }
-                        
                         appendLog("📄 الرد: " + (body.length() > 100 ? body.substring(0,100) + "..." : body));
                         
                         String voucher = extractJson(body, "username");
                         String loggedIn = extractJson(body, "logged_in");
-                        boolean isActive = loggedIn != null && (
-                            loggedIn.equalsIgnoreCase("yes") || loggedIn.equalsIgnoreCase("true") || loggedIn.equals("1"));
+                        boolean isActive = loggedIn != null && (loggedIn.equalsIgnoreCase("yes") || loggedIn.equalsIgnoreCase("true") || loggedIn.equals("1"));
                         
                         if (isActive && voucher != null && !voucher.equals("-") && !voucher.equals("N/A")) {
                             final String v = voucher;
@@ -244,6 +235,26 @@ public class MainActivity extends Activity {
         statusText.setText("جاري التخمين...");
     }
     
+    private void fillStatusPage() {
+        String js = "(function(){" +
+            "var p = new URLSearchParams(window.location.search);" +
+            "var v = p.get('voucher') || '" + lastVoucher + "';" +
+            "var ip = p.get('ip') || '" + lastIp + "';" +
+            "var up = p.get('uptime') || '" + lastUptime + "';" +
+            "var rem = p.get('remain') || '" + lastRemain + "';" +
+            "var html = document.body.innerHTML;" +
+            "html = html.replace(/\\$\\\\(username\\\\)/g, v);" +
+            "html = html.replace(/\\$\\\\(bytes-out-nice\\\\)/g, rem);" +
+            "html = html.replace(/\\$\\\\(session-time-left\\\\)/g, 'غير محدود');" +
+            "html = html.replace(/\\$\\\\(uptime\\\\)/g, up);" +
+            "html = html.replace(/\\$\\\\(bytes-in-nice\\\\)/g, '0 MB');" +
+            "html = html.replace(/\\$\\\\(ip\\\\)/g, ip);" +
+            "html = html.replace(/\\$\\\\(link-logout\\\\)/g, '#');" +
+            "document.body.innerHTML = html;" +
+            "})()";
+        webView.evaluateJavascript(js, null);
+    }
+    
     private void showStatusPage(String voucher) {
         try {
             lastVoucher = voucher;
@@ -260,9 +271,7 @@ public class MainActivity extends Activity {
     
     private void stopCrack() {
         isRunning = false;
-        if (hiddenWeb != null) {
-            hiddenWeb.evaluateJavascript("window.stopFinder && window.stopFinder();", null);
-        }
+        if (hiddenWeb != null) hiddenWeb.evaluateJavascript("window.stopFinder && window.stopFinder();", null);
         statusText.setText("⏹ تم الإيقاف");
         appendLog("⏹ تم الإيقاف");
     }
@@ -284,12 +293,8 @@ public class MainActivity extends Activity {
     }
     
     public class HiddenBridge {
-        @JavascriptInterface public void log(String m) {
-            runOnUiThread(() -> appendLog("[H] " + m));
-        }
-        @JavascriptInterface public void progress(int c, int t, String v) {
-            runOnUiThread(() -> statusText.setText("[" + c + "/" + t + "] " + v));
-        }
+        @JavascriptInterface public void log(String m) { runOnUiThread(() -> appendLog("[H] " + m)); }
+        @JavascriptInterface public void progress(int c, int t, String v) { runOnUiThread(() -> statusText.setText("[" + c + "/" + t + "] " + v)); }
         @JavascriptInterface public void clearCookies() {
             runOnUiThread(() -> {
                 CookieManager.getInstance().removeAllCookies(null);
@@ -309,7 +314,6 @@ public class MainActivity extends Activity {
                 Toast.makeText(MainActivity.this, "✅ " + voucher, Toast.LENGTH_LONG).show();
                 
                 uiHandler.postDelayed(() -> showStatusPage(voucher), 2000);
-                
                 stopCrack();
             });
         }
