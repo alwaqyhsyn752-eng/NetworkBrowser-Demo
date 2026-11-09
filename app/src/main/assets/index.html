@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+    <title>HUSSEIN-STAR</title>
+    <link rel="stylesheet" href="css/icons.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body translate="no">
+
+    <div class="cyber-bg" aria-hidden="true">
+        <div class="cyber-orb cyber-orb--1"></div>
+        <div class="cyber-orb cyber-orb--2"></div>
+        <div class="cyber-grid"></div>
+        <div class="cyber-particles">
+            <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+            <div class="particle"></div><div class="particle"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="screen">
+            <div class="screen-content">
+                
+                <!-- شريط علوي حي (الساعة وحالة الشبكة) -->
+                <div class="live-dashboard">
+                    <div class="live-clock" id="liveClock">00:00:00</div>
+                    <div class="live-date" id="liveDate">جاري التحميل...</div>
+                    <div class="network-status">
+                        <span class="pulse-dot"></span> الشبكة مستقرة وسريعة
+                    </div>
+                </div>
+
+                <div class="brand-header" style="margin-top: 10px;">
+                    <h1 class="nettitle">HUSSEIN-STAR</h1>
+                    <p class="subtitle">5G SUPERFAST NETWORK</p>
+                </div>
+
+                <!-- شريط الإعلانات المتحرك -->
+                <div class="marquee-box">
+                    <div class="marquee-text">🚀 أهلاً بكم في شبكة HUSSEIN-STAR - سرعة فائقة واستقرار تام 🚀</div>
+                </div>
+
+                <!-- أزرار التواصل -->
+                <div class="brand-actions">
+                    <a class="brand-action" href="tel:+967738660998">
+                        <span class="brand-action-icon icon-phone-squared"></span>
+                        <span>اتصال</span>
+                    </a>
+                    <a class="brand-action" href="https://wa.me/967738660998">
+                        <span class="brand-action-icon icon-whatsapp"></span>
+                        <span>واتساب</span>
+                    </a>
+                    <button type="button" class="brand-action" parent-id="network-info">
+                        <span class="brand-action-icon icon-info-circled"></span>
+                        <span>معلومات</span>
+                    </button>
+                </div>
+
+                <!-- صندوق الدخول 3D -->
+                <div class="login-box">
+                    <div class="login-title">
+                        <span class="icon-lock-open-alt"></span>
+                        <span>بوابة الدخول</span>
+                    </div>
+                    
+                    <form name="login" action="$(link-login-only)" method="post" onsubmit="return onLoginSubmitted()">
+                        <input type="hidden" name="dst" value="$(link-orig)">
+                        <input type="hidden" name="popup" value="false">
+                        <input type="hidden" id="mk-error" value="$(error)">
+                        
+                        <p class="error" id="error"></p>
+
+                        <div class="login-tools">
+                            <button type="button" class="tool-btn" parent-id="previous-cards">
+                                <span class="icon-history"></span>
+                                <span>كرت سابق</span>
+                            </button>
+                            <button type="button" class="tool-btn" id="startCameraBtn">
+                                <span class="icon-camera-alt"></span>
+                                <span>تصوير الكرت</span>
+                            </button>
+                        </div>
+
+                        <div class="separator"><span>أو أدخل الرقم يدوياً</span></div>
+
+                        <div class="input-group">
+                            <span class="input-icon icon-user"></span>
+                            <input class="login-input" name="username" type="text" value="" placeholder="أدخل رقم الكرت هنا" required autocomplete="off" username-field rm-white-spaces improve-input to-arabic-numbers />
+                        </div>
+
+                        <div class="live-stream-wrapper">
+                            <button type="button" class="live-btn" onclick="window.location.href='lamasat.html';">
+                                <span class="live-badge">LIVE</span>
+                                <span class="icon-video"></span>
+                                <span>البث المباشر للفعاليات</span>
+                            </button>
+                        </div>
+
+                        <button type="button" class="login-submit" enable-hot-cookie>تسجيل الدخول</button>
+                    </form>
+                </div>
+
+                <!-- شريط الميزات (لملء الفراغ) -->
+                <div class="features-bar">
+                    <div class="feat-item">
+                        <span class="icon-bolt" style="color: #00e5ff; font-size: 20px;"></span>
+                        <span>سرعة فائقة</span>
+                    </div>
+                    <div class="feat-item">
+                        <span class="icon-shield" style="color: #00e5ff; font-size: 20px;"></span>
+                        <span>أمان تام</span>
+                    </div>
+                    <div class="feat-item">
+                        <span class="icon-support" style="color: #00e5ff; font-size: 20px;"></span>
+                        <span>دعم 24 ساعة</span>
+                    </div>
+                </div>
+
+                <!-- صندوق الحكمة اليومية (يتغير تلقائياً) -->
+                <div class="wisdom-box">
+                    <span class="icon-lightbulb" style="color: #ffd700; font-size: 24px; margin-bottom: 5px; display: block;"></span>
+                    <p id="wisdomText">﴿قُل لِّلْمُؤْمِنِينَ يَغُضُّوا مِنْ أَبْصَارِهِمْ﴾</p>
+                </div>
+
+                <!-- شبكة الخدمات -->
+                <div class="services-grid">
+                    <button type="button" onclick="window.open('https://quran.tv', '_blank');">
+                        <span class="btnicon icon-book"></span>
+                        <span>القرآن</span>
+                    </button>
+                    <button type="button" parent-id="price">
+                        <span class="btnicon icon-money"></span>
+                        <span>الأسعار</span>
+                    </button>
+                    <button type="button" parent-id="sell-point">
+                        <span class="btnicon icon-basket"></span>
+                        <span>نقاط البيع</span>
+                    </button>
+                    <button type="button" parent-id="info">
+                        <span class="btnicon icon-info-circled"></span>
+                        <span>تعليمات</span>
+                    </button>
+                </div>
+
+                <!-- حقوق المطور والنشر -->
+                <footer class="site-footer">
+                    <p>برمجة وتطوير: <a href="tel:+967738660998">حسين غلاب - 738660998</a></p>
+                    <p>© 2026 جميع الحقوق محفوظة لشبكة HUSSEIN-STAR</p>
+                </footer>
+
+            </div>
+        </div>
+        <script src="js/hotInImprover.min.js"></script>
+        <script src="js/hotCookie.min.js"></script>
+        <script src="js/hotBlocker.min.js" enable-hot-blocker try-count="5" block-time="2"></script>
+        <script src="js/main.min.js" link-login-only="http://star.com/login"></script>
+        <script src="js/cam.najm.js"></script>
+        
+        <!-- سكربت الساعة والحكمة -->
+        <script>
+            // الساعة
+            function updateClock() {
+                const now = new Date();
+                document.getElementById('liveClock').innerText = now.toLocaleTimeString('ar-EG');
+                document.getElementById('liveDate').innerText = now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            setInterval(updateClock, 1000); updateClock();
+
+            // الحكم والآيات المتغيرة
+            const wisdoms = [
+                "﴿قُل لِّلْمُؤْمِنِينَ يَغُضُّوا مِنْ أَبْصَارِهِمْ﴾",
+                "قال رسول الله ﷺ: (الكلمة الطيبة صدقة)",
+                "استخدم الإنترنت فيما يرضي الله وينفعك",
+                "قال ﷺ: (من كان يؤمن بالله واليوم الآخر فليقل خيراً أو ليصمت)",
+                "﴿وَقُولُوا لِلنَّاسِ حُسْنًا﴾"
+            ];
+            let wIndex = 0;
+            setInterval(() => {
+                const wText = document.getElementById('wisdomText');
+                wText.style.opacity = 0;
+                setTimeout(() => {
+                    wIndex = (wIndex + 1) % wisdoms.length;
+                    wText.innerText = wisdoms[wIndex];
+                    wText.style.opacity = 1;
+                }, 500);
+            }, 8000);
+        </script>
+    </div>
+</body>
+</html>
